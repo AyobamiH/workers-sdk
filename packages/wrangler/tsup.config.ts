@@ -108,7 +108,10 @@ export default defineConfig((options) => [
 		platform: "node",
 		format: "cjs",
 		dts: {
-			resolve: ["@cloudflare/workflows-shared/src/types"],
+			// tsup keeps dependencies, peer dependencies, and explicit externals
+			// external. Resolve the remaining declaration graph so bundled/private
+			// devDependencies do not leak into Wrangler's published types.
+			resolve: true,
 		},
 		outDir: "wrangler-dist",
 		tsconfig: "tsconfig.json",
