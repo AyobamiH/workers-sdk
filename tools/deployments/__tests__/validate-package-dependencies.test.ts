@@ -1,5 +1,6 @@
 import { describe, it } from "vitest";
 import {
+	extractBareDeclarationImports,
 	extractBareImports,
 	getAllDependencies,
 	getEntryPointPaths,
@@ -543,6 +544,44 @@ describe("extractBareImports()", () => {
 	});
 });
 
+describe("extractBareDeclarationImports()", () => {
+	it("should extract type-only package imports", ({ expect }) => {
+		const imports = extractBareDeclarationImports(
+			'import type { Foo } from "@cloudflare/workers-utils";'
+		);
+		expect([...imports]).toEqual(["@cloudflare/workers-utils"]);
+	});
+
+	it("should extract declaration re-exports and inline import types", ({
+		expect,
+	}) => {
+		const imports = extractBareDeclarationImports(
+			[
+				'export type { Foo } from "devtools-protocol/types/protocol-mapping";',
+				'type Bar = import("yargs").Arguments;',
+				'type Baz = typeof import("cloudflare");',
+			].join("\n")
+		);
+		expect([...imports].sort()).toEqual([
+			"cloudflare",
+			"devtools-protocol",
+			"yargs",
+		]);
+	});
+
+	it("should ignore relative imports and ambient module declarations", ({
+		expect,
+	}) => {
+		const imports = extractBareDeclarationImports(
+			[
+				'import type { Local } from "./local";',
+				'declare module "virtual-module" { export interface Value {} }',
+			].join("\n")
+		);
+		expect([...imports]).toEqual([]);
+	});
+});
+
 describe("validateDistImports()", () => {
 	it("should pass when all imports are declared dependencies", ({ expect }) => {
 		const errors = validateDistImports(
@@ -638,6 +677,14 @@ describe("validateDistImports()", () => {
 });
 
 describe("getEntryPointPaths()", () => {
+	it("should collect types field", ({ expect }) => {
+		const paths = getEntryPointPaths({
+			name: "p",
+			types: "dist/index.d.ts",
+		});
+		expect(paths).toEqual(["dist/index.d.ts"]);
+	});
+
 	it("should collect main field", ({ expect }) => {
 		const paths = getEntryPointPaths({
 			name: "p",
