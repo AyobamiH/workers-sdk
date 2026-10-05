@@ -18,5 +18,7 @@ jobs:
           node-version: 22
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
+      - name: Build workers-auth dependency chain
+        run: pnpm --filter @cloudflare/workers-auth... build
       - name: Run exact regression test
         run: pnpm --filter @cloudflare/workers-auth exec vitest run tests/core/factory.test.ts -t "includes account-ID guidance when /memberships returns 10001"
