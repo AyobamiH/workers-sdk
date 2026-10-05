@@ -33,17 +33,6 @@ const MONOREPO_PACKAGE_ALIASES = {
 	),
 	"@cloudflare/workers-utils": path.join(__dirname, "../workers-utils/src"),
 };
-const DTS_BUNDLED_DEPENDENCIES = [
-	/^@cloudflare\/containers-shared(?:\/|$)/,
-	/^@cloudflare\/remote-bindings(?:\/|$)/,
-	/^@cloudflare\/workers-shared(?:\/|$)/,
-	/^@cloudflare\/workers-utils(?:\/|$)/,
-	/^@cloudflare\/workflows-shared(?:\/|$)/,
-	/^cloudflare(?:\/|$)/,
-	/^devtools-protocol(?:\/|$)/,
-	/^yargs(?:\/|$)/,
-];
-
 const workersContexts = new Map<string, esbuild.BuildContext>();
 function embedWorkersPlugin({
 	isWatch,
@@ -119,9 +108,10 @@ export default defineConfig((options) => [
 		platform: "node",
 		format: "cjs",
 		dts: {
-			// These packages are bundled into Wrangler's runtime output rather than
-			// installed for consumers, so their public type graph must be bundled too.
-			resolve: DTS_BUNDLED_DEPENDENCIES,
+			// Runtime dependencies and peers remain external automatically. Resolve
+			// every other type dependency so private/dev-only packages do not leak
+			// into Wrangler's published declaration entry point.
+			resolve: true,
 		},
 		outDir: "wrangler-dist",
 		tsconfig: "tsconfig.json",
