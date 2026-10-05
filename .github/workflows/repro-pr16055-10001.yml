@@ -1,0 +1,23 @@
+name: PR 16055 red-green reproduction
+
+on:
+  push:
+    branches:
+      - "repro/pr16055-10001-red-green"
+
+permissions:
+  contents: read
+
+jobs:
+  reproduce:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Run exact regression test
+        run: pnpm --filter @cloudflare/workers-auth exec vitest run tests/core/factory.test.ts -t "includes account-ID guidance when /memberships returns 10001"
