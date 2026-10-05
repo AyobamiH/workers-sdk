@@ -26,12 +26,14 @@ import { isBuiltin } from "node:module";
 import { dirname, resolve } from "node:path";
 import * as esbuild from "esbuild";
 import { glob } from "tinyglobby";
+import ts from "typescript";
 
 export interface PackageJSON {
 	name: string;
 	private?: boolean;
 	main?: string;
 	module?: string;
+	types?: string;
 	exports?: unknown;
 	bin?: string | Record<string, string>;
 	dependencies?: Record<string, string>;
@@ -342,7 +344,54 @@ export async function extractBareImports(
 }
 
 /**
- * Collects every path string referenced by the package's main/module/exports/bin
+ * Extracts bare package imports from a TypeScript declaration file.
+ *
+ * Unlike the JavaScript scanner above, this uses the TypeScript AST so
+ * type-only imports and inline import types are preserved.
+ */
+export function extractBareDeclarationImports(
+	content: string
+): Set<string> {
+	const imports = new Set<string>();
+	const source = ts.createSourceFile(
+		"index.d.ts",
+		content,
+		ts.ScriptTarget.Latest,
+		true,
+		ts.ScriptKind.TS
+	);
+
+	function addSpecifier(specifier: ts.Expression | undefined) {
+		if (specifier && ts.isStringLiteralLike(specifier)) {
+			const spec = specifier.text;
+			if (isBareSpecifier(spec)) {
+				imports.add(getPackageNameFromSpecifier(spec));
+			}
+		}
+	}
+
+	function visit(node: ts.Node) {
+		if (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) {
+			addSpecifier(node.moduleSpecifier);
+		} else if (
+			ts.isImportEqualsDeclaration(node) &&
+			ts.isExternalModuleReference(node.moduleReference)
+		) {
+			addSpecifier(node.moduleReference.expression);
+		} else if (ts.isImportTypeNode(node)) {
+			if (ts.isLiteralTypeNode(node.argument)) {
+				addSpecifier(node.argument.literal);
+			}
+		}
+		ts.forEachChild(node, visit);
+	}
+
+	visit(source);
+	return imports;
+}
+
+/**
+ * Collects every path string referenced by the package's main/module/types/exports/bin
  * fields. These are the entry points that Node.js will actually load when the
  * package is imported or executed — and thus the surface that needs to have
  * all of its imports resolvable from `dependencies`/`peerDependencies`.
@@ -357,6 +406,9 @@ export function getEntryPointPaths(packageJson: PackageJSON): string[] {
 	}
 	if (packageJson.module) {
 		paths.add(packageJson.module);
+	}
+	if (packageJson.types) {
+		paths.add(packageJson.types);
 	}
 	walkExportValue(packageJson.exports, paths);
 	if (typeof packageJson.bin === "string") {
@@ -393,9 +445,9 @@ function walkExportValue(value: unknown, paths: Set<string>): void {
 }
 
 /**
- * Walks the package's runtime entry points (and any sibling files in the same
- * output directories — to cover code-split chunks) and returns the union of
- * all bare-specifier imports found across them.
+ * Walks the package's published runtime and declaration entry points (plus
+ * sibling files in the same output directories for code-split chunks) and
+ * returns the union of all bare-specifier imports found across them.
  */
 export async function scanDistForExternalImports(
 	packageDir: string,
@@ -404,14 +456,14 @@ export async function scanDistForExternalImports(
 	const imports = new Set<string>();
 	const entryPaths = getEntryPointPaths(packageJson);
 
-	// Build the set of patterns to scan. For each entry-point path that points
-	// at a JS file, also scan its containing directory recursively to cover
-	// code-split chunks. (E.g. workers-utils' dist/index.mjs re-exports from
-	// dist/chunk-*.mjs, which we want to validate too.)
+	// Build the set of patterns to scan. For each runtime or declaration entry
+	// point, also scan sibling output chunks in the same directory.
 	const patterns = new Set<string>();
 	for (const rawPath of entryPaths) {
 		const cleaned = rawPath.replace(/^\.\//, "");
-		if (!/\.(mjs|cjs|js)$/.test(cleaned)) {
+		const isRuntime = /\.(mjs|cjs|js)$/.test(cleaned);
+		const isDeclaration = /\.d\.(mts|cts|ts)$/.test(cleaned);
+		if (!isRuntime && !isDeclaration) {
 			continue;
 		}
 		const absPath = resolve(packageDir, cleaned);
@@ -420,7 +472,11 @@ export async function scanDistForExternalImports(
 		}
 		const containingDir = dirname(cleaned);
 		if (containingDir && containingDir !== ".") {
-			patterns.add(`${containingDir}/**/*.{mjs,cjs,js}`);
+			patterns.add(
+				isDeclaration
+					? `${containingDir}/**/*.d.{mts,cts,ts}`
+					: `${containingDir}/**/*.{mjs,cjs,js}`
+			);
 		} else {
 			patterns.add(cleaned);
 		}
@@ -436,11 +492,14 @@ export async function scanDistForExternalImports(
 	});
 
 	for (const file of matched) {
-		if (file.endsWith(".map") || file.endsWith(".d.ts")) {
+		if (file.endsWith(".map")) {
 			continue;
 		}
 		const content = readFileSync(file, "utf-8");
-		for (const imp of await extractBareImports(content)) {
+		const fileImports = /\.d\.(mts|cts|ts)$/.test(file)
+			? extractBareDeclarationImports(content)
+			: await extractBareImports(content);
+		for (const imp of fileImports) {
 			imports.add(imp);
 		}
 	}
@@ -450,7 +509,8 @@ export async function scanDistForExternalImports(
 
 /**
  * Validates that every bare-specifier import found in a package's published
- * files is declared as either a `dependency` or `peerDependency`.
+ * runtime and declaration files is declared as either a `dependency` or
+ * `peerDependency`.
  *
  * Catches drift between bundler config `external` lists and `package.json` —
  * for example, a devDependency that's incorrectly marked external in the
@@ -526,10 +586,9 @@ export async function checkPackageDependencies(): Promise<string[]> {
 		);
 		errors.push(...packageErrors);
 
-		// Scan the published runtime files (main/module/exports/bin) to catch
-		// drift between bundler `external` lists and `package.json`. This
-		// catches devDeps incorrectly marked as external — which would leave
-		// the published bundle with unresolvable imports for end users.
+		// Scan published runtime and declaration entry points to catch drift
+		// between bundler boundaries and package.json. This catches private
+		// devDependencies leaking into either JavaScript or public declarations.
 		try {
 			const importedPackages = await scanDistForExternalImports(
 				dir,
