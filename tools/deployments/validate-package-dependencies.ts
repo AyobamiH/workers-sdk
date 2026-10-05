@@ -343,7 +343,6 @@ export async function extractBareImports(
 	return imports;
 }
 
-
 /**
  * Extracts bare package imports from a TypeScript declaration file.
  *
@@ -392,7 +391,7 @@ export function extractBareDeclarationImports(
 }
 
 /**
- * Collects every path string referenced by the package's main/module/exports/bin
+ * Collects every path string referenced by the package's main/module/types/exports/bin
  * fields. These are the entry points that Node.js will actually load when the
  * package is imported or executed — and thus the surface that needs to have
  * all of its imports resolvable from `dependencies`/`peerDependencies`.
