@@ -125,6 +125,7 @@ export default defineConfig((options) => [
 				"@cloudflare/workers-shared",
 				"devtools-protocol",
 				"devtools-protocol/types/protocol-mapping",
+				"undici",
 			],
 		},
 		outDir: "wrangler-dist",
