@@ -20,6 +20,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build Wrangler dependency chain
         run: pnpm --filter wrangler... build
+      - name: Show remaining declaration imports
+        run: |
+          grep -R -n -E '@cloudflare/(workers-utils|containers-shared|workers-shared|remote-bindings)|devtools-protocol|from "yargs"|from "cloudflare"' packages/wrangler/wrangler-dist --include='*.d.ts' --include='*.d.mts' --include='*.d.cts' || true
       - name: Run Wrangler type tests and declaration boundary
         run: pnpm --filter wrangler type:tests
       - name: Run command introspection tests
