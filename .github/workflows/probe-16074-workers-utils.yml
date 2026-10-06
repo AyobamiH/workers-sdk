@@ -25,6 +25,8 @@ jobs:
         run: pnpm --filter wrangler... build
       - name: Check Wrangler published declarations
         run: pnpm --filter wrangler type:tests
+      - name: Smoke Wrangler runtime
+        run: node packages/wrangler/bin/wrangler.js --version
       - name: Build Vite plugin dependency chain
         run: pnpm --filter @cloudflare/vite-plugin... build
       - name: Check Vite plugin type identity
