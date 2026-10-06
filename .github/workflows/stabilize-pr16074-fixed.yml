@@ -1,0 +1,44 @@
+name: Stabilize PR 16074 fixed candidate
+
+on:
+  push:
+    branches:
+      - "stabilize/16074-fixed-current-main"
+
+permissions:
+  contents: read
+
+jobs:
+  repository-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Repository checks
+        run: pnpm check
+
+  targeted-compatibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Build Wrangler dependency chain
+        run: pnpm --filter wrangler... build
+      - name: Wrangler runtime smoke
+        run: node packages/wrangler/bin/wrangler.js --version
+      - name: Wrangler published declaration check
+        run: pnpm --filter wrangler type:tests
+      - name: Build Vite plugin dependency chain
+        run: pnpm --filter @cloudflare/vite-plugin... build
+      - name: Vite plugin type-check against built Wrangler
+        run: pnpm --filter @cloudflare/vite-plugin check:type
+      - name: Formatting
+        run: pnpm exec oxfmt --check packages/wrangler/package.json packages/wrangler/tsup.config.ts .changeset/wrangler-public-types.md
