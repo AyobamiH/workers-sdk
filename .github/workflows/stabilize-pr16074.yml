@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "stabilize/16074-last-green"
+      - "stabilize/16074-current-main"
 
 permissions:
   contents: read
