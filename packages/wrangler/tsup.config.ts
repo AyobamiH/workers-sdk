@@ -133,6 +133,7 @@ export default defineConfig((options) => [
 		outDir: "wrangler-dist",
 		tsconfig: "tsconfig.json",
 		external: EXTERNAL_DEPENDENCIES,
+		noExternal: ["@cloudflare/workers-utils"],
 		sourcemap: process.env.SOURCEMAPS !== "false",
 		inject: [path.join(__dirname, "import_meta_url.js")],
 		// mainFields: ["module", "main"],
