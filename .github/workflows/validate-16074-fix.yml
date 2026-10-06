@@ -1,0 +1,32 @@
+name: Validate PR 16074 fix
+
+on:
+  push:
+    branches:
+      - "probe/16074-fix"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Build Wrangler dependency chain
+        run: pnpm --filter wrangler... build
+      - name: Run Wrangler type tests and declaration boundary
+        run: pnpm --filter wrangler type:tests
+      - name: Run command introspection tests
+        run: pnpm --filter wrangler exec vitest run src/__tests__/experimental-commands-api.test.ts
+      - name: Verify leaked packages are absent
+        run: |
+          if grep -E '@cloudflare/(workers-utils|containers-shared|workers-shared|remote-bindings)|devtools-protocol|from "yargs"|from "cloudflare"' packages/wrangler/wrangler-dist/cli.d.ts; then
+            echo "Unexpected private declaration dependency remains"
+            exit 1
+          fi
