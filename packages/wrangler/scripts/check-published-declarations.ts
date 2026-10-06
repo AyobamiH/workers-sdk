@@ -34,12 +34,16 @@ for (const entryPoint of typeEntryPoints) {
 
 const importedPackages = new Set<string>();
 for (const declarationFile of declarationFiles) {
-	const imports = ts.preProcessFile(
+	const preprocessed = ts.preProcessFile(
 		fs.readFileSync(declarationFile, "utf-8"),
 		true,
 		true
-	).importedFiles;
-	for (const { fileName } of imports) {
+	);
+	const packageReferences = [
+		...preprocessed.importedFiles,
+		...preprocessed.typeReferenceDirectives,
+	];
+	for (const { fileName } of packageReferences) {
 		if (isBareSpecifier(fileName)) {
 			importedPackages.add(getPackageNameFromSpecifier(fileName));
 		}
