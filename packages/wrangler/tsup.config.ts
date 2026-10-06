@@ -108,10 +108,19 @@ export default defineConfig((options) => [
 		platform: "node",
 		format: "cjs",
 		dts: {
-			// tsup keeps dependencies, peer dependencies, and explicit externals
-			// external. Resolve the remaining declaration graph so bundled/private
-			// devDependencies do not leak into Wrangler's published types.
-			resolve: true,
+			// Resolve only the private type dependencies that are safe for tsup to
+			// inline. Resolving the whole graph also pulls in yargs and the
+			// Cloudflare SDK, whose declaration shapes are not supported by
+			// rollup-plugin-dts.
+			resolve: [
+				"@cloudflare/workflows-shared/src/types",
+				"@cloudflare/workers-utils",
+				"@cloudflare/containers-shared",
+				"@cloudflare/workers-shared",
+				"@cloudflare/remote-bindings",
+				"devtools-protocol",
+				"devtools-protocol/types/protocol-mapping",
+			],
 		},
 		outDir: "wrangler-dist",
 		tsconfig: "tsconfig.json",
