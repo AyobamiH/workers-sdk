@@ -1,0 +1,55 @@
+name: Probe Wrangler DTS resolve set
+
+on:
+  push:
+    branches:
+      - "probe/16074-dts-resolve"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: baseline
+            pkgs: '@cloudflare/workflows-shared/src/types'
+          - id: workers-utils
+            pkgs: '@cloudflare/workflows-shared/src/types,@cloudflare/workers-utils'
+          - id: containers-shared
+            pkgs: '@cloudflare/workflows-shared/src/types,@cloudflare/containers-shared'
+          - id: workers-shared
+            pkgs: '@cloudflare/workflows-shared/src/types,@cloudflare/workers-shared'
+          - id: remote-bindings
+            pkgs: '@cloudflare/workflows-shared/src/types,@cloudflare/remote-bindings'
+          - id: devtools-protocol
+            pkgs: '@cloudflare/workflows-shared/src/types,devtools-protocol'
+          - id: yargs
+            pkgs: '@cloudflare/workflows-shared/src/types,yargs'
+          - id: cloudflare
+            pkgs: '@cloudflare/workflows-shared/src/types,cloudflare'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Patch resolve list
+        env:
+          PKGS: ${{ matrix.pkgs }}
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = 'packages/wrangler/tsup.config.ts';
+          const pkgs = process.env.PKGS.split(',');
+          let s = fs.readFileSync(p, 'utf8');
+          s = s.replace('resolve: true,', 'resolve: ' + JSON.stringify(pkgs) + ',');
+          fs.writeFileSync(p, s);
+          console.log(process.env.PKGS);
+          NODE
+      - name: Build Wrangler dependency chain
+        run: pnpm --filter wrangler... build
