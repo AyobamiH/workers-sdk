@@ -10,14 +10,7 @@ import type {
 } from "@cloudflare/remote-bindings";
 import type { AsyncHook, CfAccount } from "@cloudflare/workers-utils";
 
-export { pickRemoteBindings } from "@cloudflare/remote-bindings";
-export type {
-	RemoteBindingsContext,
-	RemoteBindingsLogger,
-	RemoteProxySession,
-	RemoteProxySessionData,
-	WorkerConfigObject,
-} from "@cloudflare/remote-bindings";
+export * from "@cloudflare/remote-bindings";
 export { startRemoteProxySession } from "./start-remote-proxy-session";
 export type { StartRemoteProxySessionOptions } from "./start-remote-proxy-session";
 
