@@ -5,7 +5,12 @@
 
 import "cloudflare/shims/web";
 import process from "node:process";
-import { FatalError } from "@cloudflare/workers-utils";
+import {
+	defaultWranglerConfig,
+	experimental_patchConfig,
+	experimental_readRawConfig,
+	FatalError,
+} from "@cloudflare/workers-utils";
 import { hideBin } from "yargs/helpers";
 import {
 	convertConfigBindingsToStartWorkerBindings,
@@ -141,12 +146,12 @@ export const unstable_generateASSETSBinding: (
 export {
 	defaultWranglerConfig as unstable_defaultWranglerConfig,
 	experimental_readRawConfig,
-} from "@cloudflare/workers-utils";
+};
 
 // TODO: consider if we want to keep exporting `experimental_patchConfig` from wrangler.
 //       wouldn't it be better for consumers to depend and use it directly from
 //       @cloudflare/workers-utils instead?
-export { experimental_patchConfig } from "@cloudflare/workers-utils";
+export { experimental_patchConfig };
 
 export {
 	startRemoteProxySession,
