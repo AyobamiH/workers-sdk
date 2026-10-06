@@ -1,0 +1,36 @@
+name: Probe Wrangler selective DTS boundary
+
+on:
+  push:
+    branches:
+      - "probe/16074-safe-set"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Build Wrangler dependency chain
+        run: pnpm --filter wrangler... build
+      - name: Show published declaration imports
+        if: always()
+        run: |
+          node - <<'NODE'
+          const fs=require('fs');
+          const p='packages/wrangler/wrangler-dist/cli.d.ts';
+          if (!fs.existsSync(p)) process.exit(0);
+          const text=fs.readFileSync(p,'utf8');
+          const matches=[...text.matchAll(/(?:from\s+|import\s*\()["']([^"']+)["']/g)].map(m=>m[1]);
+          console.log([...new Set(matches)].sort().join('\n'));
+          NODE
+      - name: Run published declaration boundary check
+        if: always()
+        run: node -r esbuild-register packages/wrangler/scripts/check-published-declarations.ts
