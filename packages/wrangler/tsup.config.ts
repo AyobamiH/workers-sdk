@@ -108,16 +108,21 @@ export default defineConfig((options) => [
 		platform: "node",
 		format: "cjs",
 		dts: {
-			// Resolve only the private type dependencies that are safe for tsup to
-			// inline. Resolving the whole graph also pulls in yargs and the
-			// Cloudflare SDK, whose declaration shapes are not supported by
-			// rollup-plugin-dts.
+			compilerOptions: {
+				baseUrl: ".",
+				paths: {
+					"@cloudflare/workers-utils": ["../workers-utils/src/index.ts"],
+					"@cloudflare/remote-bindings": ["../remote-bindings/src/index.ts"],
+				},
+			},
+			// Resolve only the remaining private type dependencies that are safe
+			// for tsup's node_modules resolver to inline. The workspace packages
+			// above use declaration-only source paths because they publish through
+			// conditional .d.mts exports, which tsup 8.3's resolver does not probe.
 			resolve: [
 				"@cloudflare/workflows-shared/src/types",
-				"@cloudflare/workers-utils",
 				"@cloudflare/containers-shared",
 				"@cloudflare/workers-shared",
-				"@cloudflare/remote-bindings",
 				"devtools-protocol",
 				"devtools-protocol/types/protocol-mapping",
 			],
