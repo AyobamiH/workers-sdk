@@ -19,41 +19,84 @@ export type ExperimentalCommandMetadata = {
 	hideGlobalFlags?: string[];
 };
 
+type ExperimentalStringRequirement =
+	| string
+	| readonly string[]
+	| Record<string, string | readonly string[]>;
+
 export type ExperimentalCommandArgDefinition = {
 	alias?: string | readonly string[];
 	array?: boolean;
-	choices?: readonly unknown[];
+	boolean?: boolean;
+	choices?: ReadonlyArray<string | number | true | undefined>;
+	coerce?: (arg: unknown) => unknown;
+	config?: boolean;
+	configParser?: (configPath: string) => object;
+	conflicts?: ExperimentalStringRequirement;
+	count?: boolean;
 	default?: unknown;
+	defaultDescription?: string;
+	demand?: boolean | string;
+	deprecate?: boolean | string;
 	deprecated?: boolean | string;
-	describe?: string;
 	demandOption?: boolean | string;
+	desc?: string;
+	describe?: string;
+	description?: string;
+	global?: boolean;
+	group?: string;
 	hidden?: boolean;
+	implies?: ExperimentalStringRequirement;
+	nargs?: number;
+	normalize?: boolean;
+	number?: boolean;
+	require?: boolean | string;
+	required?: boolean | string;
 	requiresArg?: boolean;
-	type?: string;
+	skipValidation?: boolean;
+	string?: boolean;
+	type?: "array" | "count" | "boolean" | "number" | "string";
+};
+
+export type ExperimentalCommandBehaviour = {
+	printBanner?: boolean | ((args: unknown) => boolean);
+	provideConfig?: boolean;
+	printConfigWarnings?: boolean;
+	useConfigRedirectIfAvailable?: boolean;
+	sendMetrics?: boolean;
+	supportTemporary?: boolean;
+	suggestSkillsAfterHandler?: boolean | ((args: unknown) => boolean);
+	[key: string]: unknown;
+};
+
+export type ExperimentalCommandCommandDefinition = {
+	type: "command";
+	command: `wrangler${string}`;
+	metadata: ExperimentalCommandMetadata;
+	args?: Record<string, ExperimentalCommandArgDefinition>;
+	behaviour?: ExperimentalCommandBehaviour;
+	positionalArgs?: string[];
+	validateArgs?: (...args: unknown[]) => unknown;
+	handler?: (...args: unknown[]) => unknown;
+};
+
+export type ExperimentalCommandNamespaceDefinition = {
+	type: "namespace";
+	command: `wrangler${string}`;
+	metadata: ExperimentalCommandMetadata;
+};
+
+export type ExperimentalCommandAliasDefinition = {
+	type: "alias";
+	command: `wrangler${string}`;
+	aliasOf: `wrangler${string}`;
+	metadata?: Partial<ExperimentalCommandMetadata>;
 };
 
 export type ExperimentalCommandDefinition =
-	| {
-			type: "command";
-			command: `wrangler${string}`;
-			metadata: ExperimentalCommandMetadata;
-			args?: Record<string, ExperimentalCommandArgDefinition>;
-			behaviour?: {
-				supportTemporary?: boolean;
-			};
-			positionalArgs?: string[];
-	  }
-	| {
-			type: "namespace";
-			command: `wrangler${string}`;
-			metadata: ExperimentalCommandMetadata;
-	  }
-	| {
-			type: "alias";
-			command: `wrangler${string}`;
-			aliasOf: `wrangler${string}`;
-			metadata?: Partial<ExperimentalCommandMetadata>;
-	  };
+	| ExperimentalCommandCommandDefinition
+	| ExperimentalCommandNamespaceDefinition
+	| ExperimentalCommandAliasDefinition;
 
 export type ExperimentalDefinitionTreeNode = {
 	definition?: ExperimentalCommandDefinition;
@@ -74,10 +117,10 @@ export type ExperimentalWranglerCommands = {
  * EXPERIMENTAL: Get all registered Wrangler commands for documentation generation.
  * This API is experimental and may change without notice.
  *
- * The published return type intentionally describes only the serialisable
- * command metadata consumed by external tooling. Internal handler/context
- * types are excluded so implementation-only dependencies do not become part
- * of Wrangler's public declaration boundary.
+ * The published return type is a dependency-free structural view of the
+ * command registry. Runtime definitions can contain additional internal
+ * properties, but implementation-only dependency types are intentionally kept
+ * out of Wrangler's public declaration boundary.
  *
  * @returns An object containing the command tree structure and global flags
  */
