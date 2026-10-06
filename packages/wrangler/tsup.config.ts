@@ -111,7 +111,7 @@ export default defineConfig((options) => [
 			// tsup keeps dependencies, peer dependencies, and explicit externals
 			// external. Resolve the remaining declaration graph so bundled/private
 			// devDependencies do not leak into Wrangler's published types.
-			resolve: true,
+			resolve: [\n\t\t\t\t"@cloudflare/workflows-shared/src/types",\n\t\t\t\t"@cloudflare/workers-utils",\n\t\t\t\t"@cloudflare/containers-shared",\n\t\t\t\t"@cloudflare/workers-shared",\n\t\t\t\t"@cloudflare/remote-bindings",\n\t\t\t\t"devtools-protocol",\n\t\t\t\t"devtools-protocol/types/protocol-mapping",\n\t\t\t],
 		},
 		outDir: "wrangler-dist",
 		tsconfig: "tsconfig.json",
