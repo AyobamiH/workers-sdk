@@ -1,6 +1,6 @@
 import { assert, describe, test } from "vitest";
 import { experimental_getWranglerCommands } from "../experimental-commands-api";
-import type { DefinitionTreeNode } from "../core/types";
+import type { ExperimentalDefinitionTreeNode } from "../experimental-commands-api";
 
 describe("experimental_getWranglerCommands", () => {
 	test("returns global flags", ({ expect }) => {
@@ -142,7 +142,7 @@ describe("experimental_getWranglerCommands", () => {
 		expect,
 	}) => {
 		const supporting: string[] = [];
-		const walk = (node: DefinitionTreeNode) => {
+		const walk = (node: ExperimentalDefinitionTreeNode) => {
 			if (
 				node.definition?.type === "command" &&
 				node.definition.behaviour?.supportTemporary
