@@ -3,8 +3,11 @@ import { INHERIT_SYMBOL } from "@cloudflare/workers-utils";
 import { runInTempDir } from "@cloudflare/workers-utils/test-helpers";
 import { beforeEach, describe, expectTypeOf, it } from "vitest";
 import { checkPublishedDeclarations } from "../../scripts/check-published-declarations";
-import type { Binding, StartDevWorkerInput } from "../../wrangler-dist/cli";
+import type { Binding, unstable_startWorker } from "../../wrangler-dist/cli";
 import type { Binding as SharedBinding } from "@cloudflare/workers-utils";
+import type { MockAgent } from "undici";
+
+type WorkerInput = Parameters<typeof unstable_startWorker>[0];
 
 it("preserves shared binding identity in the published declarations", () => {
 	expectTypeOf<Binding>().toEqualTypeOf<SharedBinding>();
@@ -22,10 +25,15 @@ it("preserves shared binding identity in the published declarations", () => {
 	expectTypeOf(binding).toExtend<Binding>();
 	expectTypeOf({
 		bindings: { CACHE: binding },
-	}).toExtend<StartDevWorkerInput>();
+	}).toExtend<WorkerInput>();
 
 	const differentSymbol = Symbol("different binding");
 	expectTypeOf(differentSymbol).not.toExtend<InheritedId>();
+});
+
+it("preserves Undici's MockAgent type in the published worker options", () => {
+	type MockFetch = NonNullable<NonNullable<WorkerInput["dev"]>["mockFetch"]>;
+	expectTypeOf<MockFetch>().toEqualTypeOf<MockAgent>();
 });
 
 describe("published declaration boundaries", () => {
@@ -38,7 +46,7 @@ describe("published declaration boundaries", () => {
 		);
 	});
 
-	it.each([
+	it.for([
 		{
 			declaration:
 				'import type { AssetConfig } from "@cloudflare/workers-shared";',

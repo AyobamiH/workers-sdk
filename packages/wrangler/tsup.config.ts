@@ -111,7 +111,11 @@ export default defineConfig((options) => [
 			compilerOptions: {
 				baseUrl: ".",
 				paths: {
+					"@cloudflare/containers-shared": ["../containers-shared/index.ts"],
 					"@cloudflare/remote-bindings": ["../remote-bindings/src/index.ts"],
+					"@cloudflare/workers-shared": ["../workers-shared/index.ts"],
+					// Resolve Zod's ESM declarations; tsup 8.3 cannot load .d.cts.
+					zod: ["./node_modules/zod/index.d.ts"],
 				},
 			},
 			// Resolve only private type dependencies that are safe for tsup's
@@ -130,15 +134,15 @@ export default defineConfig((options) => [
 				"@cloudflare/workers-shared",
 				"devtools-protocol",
 				"devtools-protocol/types/protocol-mapping",
-				"undici",
+				"zod",
 			],
 		},
 		outDir: "wrangler-dist",
 		tsconfig: "tsconfig.json",
 		external: EXTERNAL_DEPENDENCIES,
-		// workers-utils is a published type dependency, but Wrangler's CJS runtime
-		// must continue bundling it because the package root is ESM-only.
-		noExternal: ["@cloudflare/workers-utils"],
+		// Preserve the bundled CJS runtime while keeping dependency-owned public
+		// types external. In particular, workers-utils' package root is ESM-only.
+		noExternal: ["@cloudflare/workers-utils", "undici"],
 		sourcemap: process.env.SOURCEMAPS !== "false",
 		inject: [path.join(__dirname, "import_meta_url.js")],
 		// mainFields: ["module", "main"],

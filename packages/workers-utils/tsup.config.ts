@@ -6,6 +6,7 @@ const declarationOptions = {
 	compilerOptions: {
 		baseUrl: ".",
 		paths: {
+			"@cloudflare/workers-shared": ["../workers-shared/index.ts"],
 			// tsup 8.3 does not load Zod's default .d.cts entry point. Resolve its
 			// published ESM declarations without changing the runtime build.
 			zod: ["./node_modules/zod/index.d.ts"],
