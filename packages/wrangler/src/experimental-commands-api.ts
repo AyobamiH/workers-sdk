@@ -2,12 +2,7 @@ import { createCLIParser } from "./index";
 
 export type ExperimentalCommandMetadata = {
 	description: string;
-	status:
-		| "experimental"
-		| "alpha"
-		| "private beta"
-		| "open beta"
-		| "stable";
+	status: "experimental" | "alpha" | "private beta" | "open beta" | "stable";
 	statusMessage?: string;
 	deprecated?: boolean;
 	deprecatedMessage?: string;
