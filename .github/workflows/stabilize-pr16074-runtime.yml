@@ -1,0 +1,47 @@
+name: PR 16074 pre-promotion runtime gate
+
+on:
+  push:
+    branches:
+      - "stabilize/16074-fixed-current-main"
+
+permissions:
+  contents: read
+
+jobs:
+  wrangler-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter wrangler... build
+      - run: pnpm --filter wrangler test:ci
+
+  vite-plugin-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cloudflare/vite-plugin... build
+      - run: pnpm --filter @cloudflare/vite-plugin test:ci
+      - run: pnpm --filter @cloudflare/vite-plugin test:e2e
+
+  vitest-plugin-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @cloudflare/vitest-plugin... build
+      - run: pnpm --filter @cloudflare/vitest-plugin test:ci
