@@ -39,10 +39,11 @@ for (const declarationFile of declarationFiles) {
 		true,
 		true
 	);
-	for (const { fileName } of [
+	const references = [
 		...preprocessed.importedFiles,
 		...preprocessed.typeReferenceDirectives,
-	]) {
+	];
+	for (const { fileName } of references) {
 		if (isBareSpecifier(fileName)) {
 			importedPackages.add(getPackageNameFromSpecifier(fileName));
 		}
