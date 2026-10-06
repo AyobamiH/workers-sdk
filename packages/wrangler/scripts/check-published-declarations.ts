@@ -74,10 +74,7 @@ function isDeclarationPath(filePath: string): boolean {
 	return /\.d\.(?:ts|mts|cts)$/.test(filePath);
 }
 
-function collectDeclarationFiles(
-	directory: string,
-	files: Set<string>
-): void {
+function collectDeclarationFiles(directory: string, files: Set<string>): void {
 	for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
 		const absolutePath = path.join(directory, entry.name);
 		if (entry.isDirectory()) {
