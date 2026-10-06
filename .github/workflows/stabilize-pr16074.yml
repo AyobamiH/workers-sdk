@@ -32,5 +32,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build Wrangler dependency chain
         run: pnpm --filter wrangler... build
+      - name: Build Vite plugin dependency chain
+        run: pnpm --filter @cloudflare/vite-plugin... build
       - name: Vite plugin type-check against built Wrangler
         run: pnpm --filter @cloudflare/vite-plugin check:type
