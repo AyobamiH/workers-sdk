@@ -1,0 +1,36 @@
+name: Stabilize PR 16074 from last-green
+
+on:
+  push:
+    branches:
+      - "stabilize/16074-last-green"
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Repository checks
+        run: pnpm check
+
+  vite-type-identity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Build Wrangler dependency chain
+        run: pnpm --filter wrangler... build
+      - name: Vite plugin type-check against built Wrangler
+        run: pnpm --filter @cloudflare/vite-plugin check:type
