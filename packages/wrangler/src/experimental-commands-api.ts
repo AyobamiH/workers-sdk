@@ -25,13 +25,24 @@ export interface ExperimentalWranglerCommandBehaviour {
 	supportTemporary?: boolean;
 }
 
-export interface ExperimentalWranglerCommandDefinition {
-	type: "command" | "namespace" | "alias";
-	command: string;
-	metadata?: ExperimentalWranglerCommandMetadata;
-	args?: Record<string, ExperimentalWranglerCommandArg>;
-	behaviour?: ExperimentalWranglerCommandBehaviour;
-}
+export type ExperimentalWranglerCommandDefinition =
+	| {
+			type: "command";
+			command: `wrangler${string}`;
+			metadata: ExperimentalWranglerCommandMetadata;
+			args?: Record<string, ExperimentalWranglerCommandArg>;
+			behaviour?: ExperimentalWranglerCommandBehaviour;
+	  }
+	| {
+			type: "namespace";
+			command: `wrangler${string}`;
+			metadata: ExperimentalWranglerCommandMetadata;
+	  }
+	| {
+			type: "alias";
+			command: `wrangler${string}`;
+			metadata?: ExperimentalWranglerCommandMetadata;
+	  };
 
 export interface ExperimentalWranglerCommandTreeNode {
 	definition?: ExperimentalWranglerCommandDefinition;
