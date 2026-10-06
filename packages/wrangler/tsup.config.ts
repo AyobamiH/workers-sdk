@@ -111,14 +111,16 @@ export default defineConfig((options) => [
 			compilerOptions: {
 				baseUrl: ".",
 				paths: {
-					"@cloudflare/workers-utils": ["../workers-utils/src/index.ts"],
 					"@cloudflare/remote-bindings": ["../remote-bindings/src/index.ts"],
 				},
 			},
-			// Resolve only the remaining private type dependencies that are safe
-			// for tsup's node_modules resolver to inline. The workspace packages
-			// above use declaration-only source paths because they publish through
-			// conditional .d.mts exports, which tsup 8.3's resolver does not probe.
+			// Resolve only private type dependencies that are safe for tsup's
+			// node_modules resolver to inline. @cloudflare/workers-utils stays
+			// external because its public Binding types contain unique symbols,
+			// whose identity must be shared with downstream workspace consumers.
+			// @cloudflare/remote-bindings uses a declaration-only source path
+			// because it publishes through conditional .d.mts exports, which
+			// tsup 8.3's resolver does not probe.
 			resolve: [
 				"@cloudflare/workflows-shared/src/types",
 				"@cloudflare/containers-shared",
