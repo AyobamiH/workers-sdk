@@ -109,6 +109,38 @@ describe("experimental_getWranglerCommands", () => {
 		expect(initCommand.definition.metadata.owner).toBeDefined();
 	});
 
+	test("preserves public command argument metadata", ({ expect }) => {
+		const commandTree = experimental_getWranglerCommands().registry;
+		const quickStart = commandTree.subtree
+			.get("tunnel")
+			?.subtree.get("quick-start");
+		assert(quickStart?.definition?.type === "command");
+
+		const urlArg = quickStart.definition.args?.url;
+		const allowedMailArg = quickStart.definition.args?.["allowed-mail"];
+		assert(urlArg);
+		assert(allowedMailArg);
+
+		expect(urlArg.description).toBe(
+			"The local URL to expose (e.g., http://localhost:3000)"
+		);
+		expect(allowedMailArg.nargs).toBe(1);
+
+		// These fields are part of the public structural type even when a
+		// particular command does not use all of them.
+		const publicArgMetadata = {
+			description: urlArg.description,
+			nargs: allowedMailArg.nargs,
+			group: "group",
+			conflicts: ["other"],
+			implies: "required",
+		} satisfies NonNullable<typeof urlArg>;
+
+		expect(publicArgMetadata.group).toBe("group");
+		expect(publicArgMetadata.conflicts).toEqual(["other"]);
+		expect(publicArgMetadata.implies).toBe("required");
+	});
+
 	test("includes namespace commands", ({ expect }) => {
 		const commandTree = experimental_getWranglerCommands().registry;
 
