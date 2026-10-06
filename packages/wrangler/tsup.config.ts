@@ -122,6 +122,9 @@ export default defineConfig((options) => [
 			// because it publishes through conditional .d.mts exports, which
 			// tsup 8.3's resolver does not probe.
 			resolve: [
+				// Follow imports within the resolved packages as well, so their
+				// private relative paths cannot escape into Wrangler's output.
+				/^\./,
 				"@cloudflare/workflows-shared/src/types",
 				"@cloudflare/containers-shared",
 				"@cloudflare/workers-shared",
